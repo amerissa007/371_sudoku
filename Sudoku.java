@@ -7,7 +7,7 @@ public class Sudoku {
 	int K; // No. Of missing digits
 	int R; // No. Of remaining missing digits
 	HashSet<String> missingLoc; // keeping track of missing locations
-	
+
 	// Constructor
 	public Sudoku() {
 		this.N = 9;
@@ -19,7 +19,7 @@ public class Sudoku {
 		SRN = SRNd.intValue();
 
 		mat = new int[N][N];
-		
+
 		missingLoc = new HashSet<String>();
 	}
 
@@ -167,28 +167,32 @@ public class Sudoku {
 		sb.append('\n');
 		return sb.toString();
 	}
-	
+
 	// check if the location is updatable by a user
 	private boolean isLocationUpdatable(int i, int j) {
 		return missingLoc.contains(i + "-" + j);
 	}
-	
+
 	// check if the Sudoku board is full
 	public boolean isBoardFull() {
 		return this.R == 0;
 	}
-	
+
 	// Fill in sudoku by user
 	public boolean enterNumber(int i, int j, int num) {
 		// WRITE CODE HERE
-		if (!isLocationUpdatable(i, j)) {
+		if (!isLocationUpdatable(i, j) || num < 1 || num > 9)
+			return false;
+
+		if (!unUsedInRow(i, num) || !unUsedInCol(j, num) ||
+				!unUsedInBox(i - i % SRN, j - j % SRN, num)) {
 			return false;
 		}
-		if (mat[i][j] == 0) {
-			--R;
-		}
+
 		mat[i][j] = num;
-		return true; // CHANGE RETURN VALUE
+		missingLoc.remove(i + "-" + j);
+		--R;
+		return true;
 	}
 
 	// Driver code
