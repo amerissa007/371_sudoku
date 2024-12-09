@@ -24,9 +24,9 @@ public class Server {
 
             while (!gameOver) {
                 Socket clientSocket = serverSocket.accept();
-                System.out.println("Welcome " + clientSocket + "!");
                 PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
                 BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                out.println("Welcome " + clientSocket + "!");
 
                 synchronized (clientWriters) {
                     clientWriters.add(out);

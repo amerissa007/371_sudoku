@@ -16,16 +16,16 @@ public class Client {
         int portNumber = Integer.parseInt(args[1]);
 
         try (
-            Socket socket = new Socket(hostName, portNumber);
-            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-            BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in))
-        ) {
-            System.out.println("Connected to Sudoku server.");
-            System.out.println("Valid commands:");
+                Socket socket = new Socket(hostName, portNumber);
+                BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+                BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in))) {
+            System.out.println("Connected to Sudoku server!");
+            System.out.println("Valid commands: ");
             System.out.println("1. show - View the current Sudoku board.");
             System.out.println("2. update <row> <col> <num> - Update the board (row and col: 0-8, num: 1-9).");
-            System.out.println("Enter your command:");
+            System.out.println("3. disconnect - Disconnect from the server.");
+            System.out.println("Enter your command: ");
 
             String fromServer;
             String fromUser;
@@ -41,6 +41,12 @@ public class Client {
                 System.out.print("Your command: ");
                 fromUser = stdIn.readLine();
 
+                if (fromUser.equals(disconnect)) {
+                    out.println(disconnect);
+                    System.out.println("Disconnected from server.");
+                    break;
+                }
+
                 if (fromUser != null) {
                     if (isValidCommand(fromUser)) {
                         out.println(fromUser);
@@ -49,9 +55,6 @@ public class Client {
                     }
                 }
 
-                if (fromUser.equals(disconnect)) {
-                    break;
-                }
             }
         } catch (UnknownHostException e) {
             System.err.println("Don't know about host " + hostName);
