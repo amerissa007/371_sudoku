@@ -29,6 +29,7 @@ public class Client {
 
             String fromServer;
             String fromUser;
+            String disconnect = "disconnect";
 
             while ((fromServer = in.readLine()) != null) {
                 System.out.println(fromServer);
@@ -46,6 +47,10 @@ public class Client {
                     } else {
                         System.out.println("Invalid command. Please use 'show' or 'update <row> <col> <num>'.");
                     }
+                }
+
+                if (fromUser.equals(disconnect)) {
+                    break;
                 }
             }
         } catch (UnknownHostException e) {

@@ -20,10 +20,11 @@ public class Server {
 
         try (ServerSocket serverSocket = new ServerSocket(portNumber)) {
             sudoku.fillValues();
+            System.out.println("Server started. Welcome to Sudoku!");
 
             while (!gameOver) {
-                System.out.println("Server started. Welcome to Sudoku!");
                 Socket clientSocket = serverSocket.accept();
+                System.out.println("Welcome " + clientSocket + "!");
                 PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
                 BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
