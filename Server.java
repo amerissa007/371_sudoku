@@ -20,13 +20,15 @@ public class Server {
 
         try (ServerSocket serverSocket = new ServerSocket(portNumber)) {
             sudoku.fillValues();
+            System.out.println("Initial Board:\n" + sudoku.getSudokuString());
             System.out.println("Server started. Welcome to Sudoku!");
 
             while (!gameOver) {
                 Socket clientSocket = serverSocket.accept();
                 PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
                 BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-                out.println("Welcome " + clientSocket + "!");
+                out.println(
+                        "Welcome to Sudoku! Type 'show' to see the board or 'update <row> <col> <num>' to make a move.");
 
                 synchronized (clientWriters) {
                     clientWriters.add(out);
@@ -76,6 +78,54 @@ public class Server {
                 String inputLine;
                 while ((inputLine = in.readLine()) != null) {
                     String[] inputParts = inputLine.split(" ");
+
+                    if (inputParts.length == 1 && inputParts[0].equals("show")) {
+                        String board = sudoku.getSudokuString();
+                        String[] lines = board.split("\n");
+                        for (String line : lines) {
+                            out.println(line);
+                        }
+                        out.println("END_BOARD");
+                        continue;
+                    }
+
+                    if (inputParts.length == 1 && inputParts[0].equals("update")) {
+                        try {
+                            int row = Integer.parseInt(inputParts[1]);
+                            int col = Integer.parseInt(inputParts[2]);
+                            int num = Integer.parseInt(inputParts[3]);
+
+                            if (sudoku.enterNumber(row, col, num)) {
+                                broadcastBoard();
+
+                                synchronized (clientWriters) {
+                                    for (PrintWriter writer : clientWriters) {
+                                        writer.println("END_BOARD");
+                                    }
+                                }
+
+                                if (sudoku.isBoardFull()) {
+                                    broadcastBoard();
+                                    out.println("Game Over! The board is full :(");
+                                    out.println("Thank you for playing Sudoku!");
+                                    gameOver = true;
+                                    break;
+                                }
+                            } else {
+                                out.println("Invalid move. Try again.");
+                            }
+
+                        } catch (NumberFormatException e) {
+                            out.println("Invalid input. Format: update <row> <col> <num>");
+                        }
+                        continue;
+                    }
+
+                    if (inputParts.length == 1 && inputParts[0].equals("disconnect")) {
+                        out.println("Disconnected from server.");
+                        break;
+                    }
+
                     if (inputParts.length == 3) {
                         try {
                             int row = Integer.parseInt(inputParts[0]);
