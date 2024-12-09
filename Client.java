@@ -30,6 +30,10 @@ public class Client {
             String fromServer;
             String fromUser;
             String disconnect = "disconnect";
+            String show = "show";
+            Sudoku sudoku = new Sudoku();
+
+            
 
             while ((fromServer = in.readLine()) != null) {
                 System.out.println(fromServer);
@@ -46,15 +50,28 @@ public class Client {
                     System.out.println("Disconnected from server.");
                     break;
                 }
+                if (fromUser.equals(show)) {
+                    out.println(show);
+                    String board = sudoku.getSudokuString();
+                    System.out.println(board);
+                    System.out.print("Your command: ");
+                    fromUser = stdIn.readLine();
+                }
+                // if (fromUser.equals(show)){
+                //     out.println(sudoku.getSudokuString());
+                //     continue;
+                // }
 
                 if (fromUser != null) {
                     if (isValidCommand(fromUser)) {
                         out.println(fromUser);
                     } else {
                         System.out.println("Invalid command. Please use 'show' or 'update <row> <col> <num>'.");
+                        System.out.print("Your command: ");
+                        fromUser = stdIn.readLine();
                     }
                 }
-
+                continue;
             }
         } catch (UnknownHostException e) {
             System.err.println("Don't know about host " + hostName);
