@@ -112,7 +112,9 @@ public class Server {
                                     break;
                                 }
                             } else {
-                                out.println("Invalid move. Try again.");
+                                this.out.println("Invalid move. Try again.");
+                                this.out.println("END_BOARD");
+
                             }
 
                         } catch (NumberFormatException e) {
