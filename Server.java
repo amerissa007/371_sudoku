@@ -89,7 +89,7 @@ public class Server {
                         continue;
                     }
 
-                    if (inputParts.length == 1 && inputParts[0].equals("update")) {
+                    if (inputParts.length == 4 && inputParts[0].equals("update")) {
                         try {
                             int row = Integer.parseInt(inputParts[1]);
                             int col = Integer.parseInt(inputParts[2]);
