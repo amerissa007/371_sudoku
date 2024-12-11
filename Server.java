@@ -1,11 +1,14 @@
 import java.net.*;
-import java.util.HashSet;
 import java.io.*;
+import java.util.*;
+
+
 
 public class Server {
     private static Sudoku sudoku = new Sudoku();
     private static HashSet<PrintWriter> clientWriters = new HashSet<>();
     private static boolean gameOver = false;
+    private static Map<String, Integer> usersMove = new HashMap<>();
 
     public static void main(String[] args) throws IOException {
 
@@ -27,14 +30,17 @@ public class Server {
                 Socket clientSocket = serverSocket.accept();
                 PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
                 BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                String uuid = UUID.randomUUID().toString();
                 out.println(
                         "Welcome to Sudoku! Type 'show' to see the board or 'update <row> <col> <num>' to make a move.");
+                        System.out.println("UUID" + uuid);
+
 
                 synchronized (clientWriters) {
                     clientWriters.add(out);
                 }
 
-                new Thread(new ClientHandler(clientSocket, in, out, sudoku)).start();
+                new Thread(new ClientHandler(clientSocket, in, out, sudoku, uuid)).start();
             }
             System.out.println("Game Over! Closing the server...");
             serverSocket.close();
@@ -64,9 +70,11 @@ public class Server {
         private BufferedReader in;
         private PrintWriter out;
         private Sudoku sudoku;
+        private String uuid;
 
-        public ClientHandler(Socket clientSocket, BufferedReader in, PrintWriter out, Sudoku sudoku) {
+        public ClientHandler(Socket clientSocket, BufferedReader in, PrintWriter out, Sudoku sudoku, String uuid) {
             this.clientSocket = clientSocket;
+            this.uuid = uuid;
             this.in = in;
             this.out = out;
             this.sudoku = sudoku;
@@ -88,35 +96,47 @@ public class Server {
                         out.println("END_BOARD");
                         continue;
                     }
-
                     if (inputParts.length == 4 && inputParts[0].equals("update")) {
                         try {
                             int row = Integer.parseInt(inputParts[1]);
                             int col = Integer.parseInt(inputParts[2]);
                             int num = Integer.parseInt(inputParts[3]);
-
+                    
                             if (sudoku.enterNumber(row, col, num)) {
-                                broadcastBoard();
-
+                                int spots = usersMove.getOrDefault(uuid, 0); 
+                                spots++; 
+                    
+                                usersMove.put(uuid, spots);
+                    
+                                // broadcastBoard();
+                                String board = sudoku.getSudokuString();
+                                String[] lines = board.split("\n");
+                                for (String line : lines) {
+                                    out.println(line);
+                                }
+                                out.println("END_BOARD");
+                                for (Map.Entry<String, Integer> entry : usersMove.entrySet()) {
+                                    System.out.println("uuid:" + entry.getKey() + ", Move:" + entry.getValue());
+                                }
+                    
                                 synchronized (clientWriters) {
                                     for (PrintWriter writer : clientWriters) {
                                         writer.println("END_BOARD");
                                     }
                                 }
-
+                    
                                 if (sudoku.isBoardFull()) {
                                     broadcastBoard();
                                     out.println("Game Over! The board is full :(");
+                                    declareWinner();
                                     out.println("Thank you for playing Sudoku!");
                                     gameOver = true;
                                     break;
                                 }
                             } else {
-                                this.out.println("Invalid move. Try again.");
-                                this.out.println("END_BOARD");
-
+                                out.println("Invalid move. Try again.");
+                                out.println("END_BOARD");
                             }
-
                         } catch (NumberFormatException e) {
                             out.println("Invalid input. Format: update <row> <col> <num>");
                         }
@@ -135,7 +155,13 @@ public class Server {
                             int num = Integer.parseInt(inputParts[2]);
 
                             if (sudoku.enterNumber(row, col, num)) {
-                                broadcastBoard();
+                                String board = sudoku.getSudokuString();
+                                String[] lines = board.split("\n");
+                                for (String line : lines) {
+                                    out.println(line);
+                                }
+                                out.println("END_BOARD");
+                                // broadcastBoard();
                             } else {
                                 out.println("Invalid move. Try again.");
                             }
@@ -146,6 +172,7 @@ public class Server {
 
                     if (sudoku.isBoardFull()) {
                         broadcastBoard();
+                        declareWinner();
                         out.println("Game Over! The board is full.");
                         out.println("Thank you for playing Sudoku!");
                         gameOver = true;
@@ -164,5 +191,32 @@ public class Server {
                 removeClient(out);
             }
         }
+        private static void declareWinner() {
+            String winnerUuid = null;
+            int maxMoves = 0;
+        
+            for (Map.Entry<String, Integer> entry : usersMove.entrySet()) {
+                String uuid = entry.getKey();
+                int moves = entry.getValue();
+        
+                if (moves > maxMoves) {
+                    maxMoves = moves;
+                    winnerUuid = uuid;
+                }
+            }
+        
+            synchronized (clientWriters) {
+                for (PrintWriter writer : clientWriters) {
+                    if (winnerUuid != null) {
+                        writer.println("Game Over! The winner is the player with UUID: " + winnerUuid + " with " + maxMoves + " moves!");
+                    } else {
+                        writer.println("Game Over! No winner could be determined.");
+                    }
+                }
+            }
+        
+            System.out.println("Game Over! The winner is the player with UUID: " + winnerUuid + " with " + maxMoves + " moves!");
+        }
+        
     }
 }
