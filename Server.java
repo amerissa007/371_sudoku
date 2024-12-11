@@ -31,9 +31,13 @@ public class Server {
                 PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
                 BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
                 String uuid = UUID.randomUUID().toString();
-                out.println(
-                        "Welcome to Sudoku! Type 'show' to see the board or 'update <row> <col> <num>' to make a move.");
-                        System.out.println("UUID" + uuid);
+                out.println("Welcome to Sudoku! Your unique ID is: " + uuid);
+                out.println("Valid commands:");
+                out.println("1. show - View the current Sudoku board.");
+                out.println("2. update <row> <col> <num> - Update the board (row and col: 0-8, num: 1-9).");
+                out.println("3. disconnect - Disconnect from the server.");
+                out.println("Your command: ");
+                System.out.println("UUID:" + uuid + " has connected.");
 
 
                 synchronized (clientWriters) {
@@ -88,15 +92,18 @@ public class Server {
                     String[] inputParts = inputLine.split(" ");
 
                     if (inputParts.length == 1 && inputParts[0].equals("show")) {
-                        String board = sudoku.getSudokuString();
-                        String[] lines = board.split("\n");
-                        for (String line : lines) {
-                            out.println(line);
-                        }
-                        out.println("END_BOARD");
-                        continue;
+                        System.out.println("server show");
+                        // String board = sudoku.getSudokuString();
+                        // String[] lines = board.split("\n");
+                        // for (String line : lines) {
+                        //     out.println(line);
+                        // }
+                        // broadcastBoard();
+                        out.println(sudoku.getSudokuString());
+                        out.println("Your commmand:");
+                        // continue;
                     }
-                    if (inputParts.length == 4 && inputParts[0].equals("update")) {
+                    else if (inputParts.length == 4 && inputParts[0].equals("update")) {
                         try {
                             int row = Integer.parseInt(inputParts[1]);
                             int col = Integer.parseInt(inputParts[2]);
@@ -108,20 +115,22 @@ public class Server {
                     
                                 usersMove.put(uuid, spots);
                     
-                                // broadcastBoard();
-                                String board = sudoku.getSudokuString();
-                                String[] lines = board.split("\n");
-                                for (String line : lines) {
-                                    out.println(line);
-                                }
-                                out.println("END_BOARD");
+                                broadcastBoard();
+                                // String board = sudoku.getSudokuString();
+                                // String[] lines = board.split("\n");
+                                // for (String line : lines) {
+                                //     out.println(line);
+                                // }
+                                out.println("update END_BOARD");
+                                // out.print("Your command: ");
+                                System.out.println("Current moves:");
                                 for (Map.Entry<String, Integer> entry : usersMove.entrySet()) {
                                     System.out.println("uuid:" + entry.getKey() + ", Move:" + entry.getValue());
                                 }
                     
                                 synchronized (clientWriters) {
                                     for (PrintWriter writer : clientWriters) {
-                                        writer.println("END_BOARD");
+                                        writer.println("Your command:");
                                     }
                                 }
                     
@@ -131,36 +140,43 @@ public class Server {
                                     declareWinner();
                                     out.println("Thank you for playing Sudoku!");
                                     gameOver = true;
+                                    System.exit(1);
                                     break;
                                 }
                             } else {
                                 out.println("Invalid move. Try again.");
-                                out.println("END_BOARD");
+                                out.println("Your command:");
                             }
                         } catch (NumberFormatException e) {
                             out.println("Invalid input. Format: update <row> <col> <num>");
                         }
-                        continue;
+                        // continue;
+                        
                     }
+                    else if(inputParts.length == 1 && inputParts[0].equals("show")) {
+                        out.println("Invalid input. Use 'show' to see the board or 'update <row> <col> <num>' to make a move.");
 
-                    if (inputParts.length == 1 && inputParts[0].equals("disconnect")) {
+                    }
+                    else if (inputParts.length == 1 && inputParts[0].equals("disconnect")) {
                         out.println("Disconnected from server.");
+                        System.out.println("Client disconnected.");
                         break;
                     }
 
-                    if (inputParts.length == 3) {
+                    else if (inputParts.length == 3) {
                         try {
                             int row = Integer.parseInt(inputParts[0]);
                             int col = Integer.parseInt(inputParts[1]);
                             int num = Integer.parseInt(inputParts[2]);
 
                             if (sudoku.enterNumber(row, col, num)) {
-                                String board = sudoku.getSudokuString();
-                                String[] lines = board.split("\n");
-                                for (String line : lines) {
-                                    out.println(line);
-                                }
-                                out.println("END_BOARD");
+                                // String board = sudoku.getSudokuString();
+                                // String[] lines = board.split("\n");
+                                // for (String line : lines) {
+                                //     out.println(line);
+                                // }
+                                broadcastBoard();
+                                out.println("END_BOARD parts == 3");
                                 // broadcastBoard();
                             } else {
                                 out.println("Invalid move. Try again.");
@@ -168,6 +184,15 @@ public class Server {
                         } catch (NumberFormatException e) {
                             out.println("Invalid input. Format: <row> <col> <number>");
                         }
+                    }
+                    else if (inputParts.length == 1 && inputParts[0].equals("disconnect")) {
+                        out.println("Disconnected from server.");
+                        System.out.println("Client disconnected.");
+                        break;
+                    } else {
+                        out.println("Invalid input: Use 'show' to view the board or 'update <row> <col> <num>' to make a move.");
+                        out.println("END_BOARD invalid input");
+                        out.flush();
                     }
 
                     if (sudoku.isBoardFull()) {
